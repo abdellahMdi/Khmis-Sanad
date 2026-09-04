@@ -5,6 +5,9 @@
 
 ---
 
+composer create-project laravel/laravel Back
+cd laravel-sanctum-laratrust
+
 ## 📌 Project Overview
 
 Local cooperatives and artisans in Morocco often struggle to showcase their products on a large scale due to multiple intermediaries and a lack of tailored digital tools[cite: 2]. This platform provides:
