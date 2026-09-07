@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,9 +14,7 @@ return new class extends Migration
             $table->string('notifiable_type', 50)->nullable();
             $table->dateTime('created_at');
             $table->dateTime('read_at')->nullable();
-            $table->unsignedInteger('notifiable_id');
-
-            $table->foreign('notifiable_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreignId('notifiable_id')->constrained('users')->onDelete('cascade');
         });
     }
 
