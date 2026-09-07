@@ -13,6 +13,7 @@ class Role extends Model
         'display_name',
         'description',
     ];
+    public $guarded = [];
 
     public function users(): HasMany
     {
