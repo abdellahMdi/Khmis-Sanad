@@ -11,7 +11,7 @@ return new class extends Migration
             $table->string('name', 50)->unique();
             $table->string('slug', 255)->unique();
             $table->text('bio')->nullable();
-            $table->string('hq_location', 255)->nullable();
+            $table->string('hq_location', 255);
             $table->string('status', 50)->nullable();
             $table->unsignedInteger('user_id')->unique();
 

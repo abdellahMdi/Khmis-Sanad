@@ -11,13 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Standalone Roles table (from ERD)
-        Schema::create('roles', function (Blueprint $table) {
-            $table->id();
-            $table->string('label', 50);
-            $table->timestamps();
-        });
-
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('firstname', 50);
@@ -25,7 +18,7 @@ return new class extends Migration
             $table->string('email', 150)->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('mot_de_passe', 255);
-            $table->string('telephone', 50)->nullable();
+            $table->string('telephone', 50);
             $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
             $table->rememberToken();
             $table->timestamps();
@@ -55,6 +48,5 @@ return new class extends Migration
         Schema::dropIfExists('sessions');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('users');
-        Schema::dropIfExists('roles');
     }
 };

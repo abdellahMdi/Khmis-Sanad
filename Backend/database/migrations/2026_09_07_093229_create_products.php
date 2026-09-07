@@ -9,7 +9,7 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->increments('id');
             $table->string('name', 255);
-            $table->text('description')->nullable();
+            $table->text('description');
             $table->decimal('prix', 10, 2);
             $table->decimal('prix_remise', 10, 2)->nullable();
             $table->integer('stock');

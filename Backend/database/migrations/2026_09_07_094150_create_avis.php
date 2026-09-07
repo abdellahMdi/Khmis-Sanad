@@ -9,7 +9,7 @@ return new class extends Migration
         Schema::create('avis', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('note');
-            $table->text('comment')->nullable();
+            $table->text('comment');
             $table->string('status', 255)->nullable();
             $table->unsignedInteger('user_id');
             $table->unsignedInteger('product_id');

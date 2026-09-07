@@ -8,9 +8,9 @@ return new class extends Migration
     {
         Schema::create('product_img', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('url', 255)->nullable();
+            $table->string('url', 255);
             $table->integer('order')->nullable();
-            $table->unsignedInteger('product_id')->nullable();
+            $table->unsignedInteger('product_id');
 
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
         });
