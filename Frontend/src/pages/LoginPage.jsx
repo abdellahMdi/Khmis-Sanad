@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Eye, EyeOff } from 'lucide-react';
 
-// Login form for user authentication
 function LoginPage() {
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -17,7 +16,6 @@ function LoginPage() {
 
     const { showLoading, updateToast } = useToast();
 
-    // Handle login form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
@@ -27,20 +25,30 @@ function LoginPage() {
 
         try {
             const response = await login({ email, password });
-
             updateToast(toastId, 'Connexion réussie ! Bienvenue !', 'success');
 
-            if (response.data.user.role === 'admin') {
+            const user = response.data?.user;
+            const userRoles = user?.roles || [];
+
+            if (userRoles.includes('admin') || user?.role === 'admin') {
                 navigate('/admin');
+            } else if (userRoles.includes('cooperative') || user?.role === 'cooperative') {
+                if (user?.has_coop) {
+                    navigate('/cooperative/dashboard');
+                } else {
+                    navigate('/cooperative/setup');
+                }
             } else {
                 navigate('/');
             }
         } catch (err) {
             let errorMessage = 'Une erreur est survenue. Veuillez réessayer.';
 
-            if (err.response && err.response.status === 401) {
+            if (err.response?.status === 401) {
                 errorMessage = 'Email ou mot de passe incorrect.';
-            } else if (err.response && err.response.data.errors) {
+            } else if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.response?.data?.errors) {
                 const messages = Object.values(err.response.data.errors).flat();
                 errorMessage = messages.join(' ');
             }
@@ -59,8 +67,9 @@ function LoginPage() {
                 <div className="flex-1 flex items-center justify-center p-6 md:p-10">
                     <div className="w-full max-w-md">
                         <h2 className="text-3xl font-bold text-center mb-6 text-[#A04000]">
-                            Se connecter
+                            Connexion
                         </h2>
+
                         <form className="space-y-5" onSubmit={handleSubmit}>
                             <div>
                                 <label
@@ -74,13 +83,14 @@ function LoginPage() {
                                     name="email"
                                     type="email"
                                     required
-                                    className="w-full px-4 py-2.5 rounded-xl border border-[#D8C3B0] focus:ring-2 focus:ring-[#C2591A] focus:border-[#C2591A] text-[#2C1810] placeholder-gray-400 transition-all duration-200 hover:border-[#C2591A] hover:shadow-sm outline-none"
+                                    className="w-full px-4 py-2.5 rounded-xl border border-[#D8C3B0] focus:ring-2 focus:ring-[#C2591A] focus:border-[#C2591A] text-[#2C1810] placeholder-gray-400 transition-all duration-200 hover:border-[#C2591A] outline-none"
                                     placeholder="exemple@domaine.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     disabled={isLoading}
                                 />
                             </div>
+
                             <div>
                                 <label
                                     htmlFor="password"
@@ -94,7 +104,7 @@ function LoginPage() {
                                         name="password"
                                         type={showPassword ? 'text' : 'password'}
                                         required
-                                        className="w-full px-4 py-2.5 rounded-xl border border-[#D8C3B0] focus:ring-2 focus:ring-[#C2591A] focus:border-[#C2591A] text-[#2C1810] placeholder-gray-400 transition-all duration-200 hover:border-[#C2591A] hover:shadow-sm outline-none"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-[#D8C3B0] focus:ring-2 focus:ring-[#C2591A] focus:border-[#C2591A] text-[#2C1810] placeholder-gray-400 transition-all duration-200 hover:border-[#C2591A] outline-none"
                                         placeholder="Entrez votre mot de passe"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -106,19 +116,17 @@ function LoginPage() {
                                         className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-[#C2591A] transition-colors duration-200"
                                         disabled={isLoading}
                                     >
-                                        {showPassword ? (
-                                            <EyeOff size={20} />
-                                        ) : (
-                                            <Eye size={20} />
-                                        )}
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                     </button>
                                 </div>
                             </div>
+
                             {error && (
-                                <div className="p-3 text-sm text-red-700 bg-red-50 rounded-xl border border-red-200">
+                                <div className="p-3 text-xs text-red-700 bg-red-50 rounded-xl border border-red-200">
                                     {error}
                                 </div>
                             )}
+
                             <button
                                 type="submit"
                                 disabled={isLoading}
@@ -138,13 +146,14 @@ function LoginPage() {
                                 )}
                             </button>
                         </form>
+
                         <p className="mt-6 text-center text-sm text-gray-600">
                             Vous n'avez pas de compte ?{' '}
                             <Link
                                 to="/register"
                                 className="font-semibold text-[#C2591A] hover:text-[#A04000] hover:underline transition-colors duration-200"
                             >
-                                S'inscrire ici
+                                S'inscrire
                             </Link>
                         </p>
                     </div>
