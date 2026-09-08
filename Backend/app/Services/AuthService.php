@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -27,22 +28,31 @@ class AuthService
         ];
     }
 
-    public function login(array $credentials): array
+    public function login(Request $request)
     {
-        $user = User::where('email', $credentials['email'])->first();
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-        if (! $user || ! Hash::check($credentials['mot_de_passe'], $user->mot_de_passe)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials do not match our records.'],
-            ]);
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->mot_de_passe)) {
+            return response()->json(['message' => 'Email ou mot de passe incorrect.'], 401);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return [
-            'user'  => $user->load('role'),
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'firstname' => $user->firstname,
+                'lastname' => $user->lastname,
+                'email' => $user->email,
+                'role' => $user->role_id === 1 ? 'admin' : 'user', // Or $user->role->name
+            ],
             'token' => $token,
-        ];
+        ]);
     }
 
     public function logout(User $user): void

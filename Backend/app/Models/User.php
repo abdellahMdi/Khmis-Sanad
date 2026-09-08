@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laratrust\Contracts\LaratrustUser;
 use Laratrust\Traits\HasRolesAndPermissions;
 
-class User extends Authenticatable
+class User extends Authenticatable implements LaratrustUser
 {
     use HasFactory, Notifiable, HasRolesAndPermissions;
 
@@ -45,6 +46,16 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return strtolower($this->role?->label ?? '') === 'admin';
+    }
+
+    public function isSeller(): bool
+    {
+        return strtolower($this->role?->label ?? '') === 'cooperative';
     }
 
     public function cooperative(): HasOne
