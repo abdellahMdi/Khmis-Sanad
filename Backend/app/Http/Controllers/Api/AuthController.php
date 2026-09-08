@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\AuthService;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
 {
@@ -35,18 +37,29 @@ class AuthController extends Controller
 
     public function login(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $credentials = $request->validate([
             'email'        => ['required', 'string', 'email'],
             'mot_de_passe' => ['required', 'string'],
         ]);
 
-        $result = $this->authService->login($validated);
+        /** @var array{user: User, token: string} $result */
+        $result = $this->authService->login($credentials);
+
+        $user = $result['user'];
 
         return response()->json([
             'message' => 'Logged in successfully.',
-            'user'    => $result['user'],
+            'user'    => [
+                'id'        => $user->id,
+                'firstname' => $user->firstname,
+                'lastname'  => $user->lastname,
+                'email'     => $user->email,
+                'telephone' => $user->telephone,
+                'roles'     => $user->roles->pluck('name'),
+                'has_coop'  => $user->cooperative()->exists(),
+            ],
             'token'   => $result['token'],
-        ], 200);
+        ], Response::HTTP_OK);
     }
 
     public function logout(Request $request): JsonResponse

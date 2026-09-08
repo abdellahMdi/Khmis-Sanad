@@ -6,6 +6,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthService
 {
@@ -28,31 +31,22 @@ class AuthService
         ];
     }
 
-    public function login(Request $request)
+    public function login(array $credentials): array
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $user = User::where('email', $credentials['email'])->first();
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->mot_de_passe)) {
-            return response()->json(['message' => 'Email ou mot de passe incorrect.'], 401);
+        if (!$user || !Hash::check($credentials['mot_de_passe'], $user->mot_de_passe)) {
+            throw ValidationException::withMessages([
+                'email' => ['Email ou mot de passe incorrect.'],
+            ]);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'firstname' => $user->firstname,
-                'lastname' => $user->lastname,
-                'email' => $user->email,
-                'role' => $user->role_id === 1 ? 'admin' : 'user', // Or $user->role->name
-            ],
+        return [
+            'user'  => $user,
             'token' => $token,
-        ]);
+        ];
     }
 
     public function logout(User $user): void
