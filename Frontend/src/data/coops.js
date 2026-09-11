@@ -1,0 +1,38 @@
+export const coops = [
+  {
+    id: 1,
+    emoji: '🧴',
+    name: 'Coop. Marjana',
+    location: 'Essaouira',
+    products: 12,
+    years: 15,
+    rating: '4.9★',
+  },
+  {
+    id: 2,
+    emoji: '🍯',
+    name: 'Terroir Souss',
+    location: 'Taroudant',
+    products: 8,
+    years: 10,
+    rating: '5.0★',
+  },
+  {
+    id: 3,
+    emoji: '🍶',
+    name: 'Coop. Safi Poterie',
+    location: 'Safi',
+    products: 9,
+    years: 30,
+    rating: '4.7★',
+  },
+  {
+    id: 4,
+    emoji: '👜',
+    name: 'Cuirs de Fès',
+    location: 'Fès',
+    products: 14,
+    years: 25,
+    rating: '4.9★',
+  },
+]

@@ -1,313 +1,85 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\AvisController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CooperativeController;
-use App\Http\Controllers\Api\CartController;
-use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\ReviewController;
-use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\AdminController;
-
+use App\Http\Controllers\Api\CommandController;
+use App\Http\Controllers\Api\PanierController;
+use App\Http\Controllers\Api\ProductController;
+use Illuminate\Support\Facades\Route;
 
 /*
-|--------------------------------------------------------------------------
-| Public
-|--------------------------------------------------------------------------
+|---------------------------------------------------------------------------------------------
+| Marketplace Artisanale — API Routes
+|---------------------------------------------------------------------------------------------
+|
+| Auth : Laravel Sanctum (SPA stateful tokens)
+| Roles: admin | artisan | client   (enforced via EnsureRole middleware)
+|
 */
 
-// Home
-Route::get('/home', [ProductController::class, 'home']);
-
-// Catalogue
-Route::get('/products', [ProductController::class, 'index']);
-Route::get('/products/{product}', [ProductController::class, 'show']);
-
-// Categories
-Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/categories/{category}/products', [
-    CategoryController::class,
-    'products'
-]);
-
-// Public cooperatives / shops
-Route::get('/cooperatives', [CooperativeController::class, 'index']);
-
-Route::get('/cooperatives/{cooperative}', [
-    CooperativeController::class,
-    'show'
-]);
-
-Route::get('/cooperatives/{cooperative}/products', [
-    CooperativeController::class,
-    'products'
-]);
-
-
-/*
-|--------------------------------------------------------------------------
-| Authentication
-|--------------------------------------------------------------------------
-*/
-
+// ── Public routes ────────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
-
-    Route::post('/login', [
-        AuthController::class,
-        'login'
-    ]);
-
-    Route::post('/register/buyer', [
-        AuthController::class,
-        'registerBuyer'
-    ]);
-
-    Route::post('/register/cooperative', [
-        AuthController::class,
-        'registerCooperative'
-    ]);
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login',    [AuthController::class, 'login']);
 });
 
+Route::get('/categories',              [CategoryController::class, 'index']);
+Route::get('/cooperatives',            [CooperativeController::class, 'index']);
+Route::get('/cooperatives/{cooperative}', [CooperativeController::class, 'show']);
+Route::get('/products',                [ProductController::class, 'index']);
+Route::get('/products/{product}',      [ProductController::class, 'show']);
+Route::get('/products/{product}/avis', [AvisController::class, 'index']);
 
-/*
-|--------------------------------------------------------------------------
-| Authenticated users
-|--------------------------------------------------------------------------
-*/
-
+// ── Authenticated routes ──────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
 
-    /*
-    | Authentication
-    */
+    // Auth
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/me',      [AuthController::class, 'me']);
 
-    Route::get('/auth/me', [
-        AuthController::class,
-        'me'
-    ]);
+    // Cart (client)
+    Route::prefix('panier')->middleware('role:client')->group(function () {
+        Route::get('/',              [PanierController::class, 'show']);
+        Route::post('/items',        [PanierController::class, 'addItem']);
+        Route::delete('/items/{item}', [PanierController::class, 'removeItem']);
+        Route::delete('/clear',      [PanierController::class, 'clear']);
+    });
 
-    Route::post('/auth/logout', [
-        AuthController::class,
-        'logout'
-    ]);
+    // Orders (client)
+    Route::prefix('commands')->middleware('role:client')->group(function () {
+        Route::get('/',            [CommandController::class, 'index']);
+        Route::post('/',           [CommandController::class, 'store']);
+        Route::get('/{command}',   [CommandController::class, 'show']);
+    });
 
+    // Reviews (client)
+    Route::post('/products/{product}/avis', [AvisController::class, 'store'])
+        ->middleware('role:client');
 
-    /*
-    | Profile
-    */
+    // Cooperative management (artisan)
+    Route::prefix('cooperative')->middleware('role:artisan')->group(function () {
+        Route::post('/',   [CooperativeController::class, 'store']);
+        Route::patch('/',  [CooperativeController::class, 'update']);
+    });
 
-    Route::get('/profile', [
-        ProfileController::class,
-        'show'
-    ]);
+    // Product management (artisan)
+    Route::middleware('role:artisan')->group(function () {
+        Route::post('/products',           [ProductController::class, 'store']);
+        Route::patch('/products/{product}', [ProductController::class, 'update']);
+        Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+    });
 
-    Route::put('/profile', [
-        ProfileController::class,
-        'update'
-    ]);
-
-
-    /*
-    | Cart
-    */
-
-    Route::get('/cart', [
-        CartController::class,
-        'show'
-    ]);
-
-    Route::post('/cart/items', [
-        CartController::class,
-        'addItem'
-    ]);
-
-    Route::put('/cart/items/{item}', [
-        CartController::class,
-        'updateItem'
-    ]);
-
-    Route::delete('/cart/items/{item}', [
-        CartController::class,
-        'removeItem'
-    ]);
-
-    Route::delete('/cart', [
-        CartController::class,
-        'clear'
-    ]);
-
-
-    /*
-    | Orders
-    */
-
-    Route::post('/orders', [
-        OrderController::class,
-        'store'
-    ]);
-
-    Route::get('/my/orders', [
-        OrderController::class,
-        'myOrders'
-    ]);
-
-    Route::get('/my/orders/{order}', [
-        OrderController::class,
-        'show'
-    ]);
-
-    Route::get('/my/orders/{order}/confirmation', [
-        OrderController::class,
-        'confirmation'
-    ]);
-
-
-    /*
-    | Reviews
-    */
-
-    Route::post('/products/{product}/reviews', [
-        ReviewController::class,
-        'store'
-    ]);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Cooperative
-    |--------------------------------------------------------------------------
-    */
-
-    Route::middleware('role:cooperative')
-        ->prefix('cooperative')
-        ->group(function () {
-
-            // Dashboard
-            Route::get('/dashboard', [
-                CooperativeController::class,
-                'dashboard'
-            ]);
-
-            // My shop
-            Route::get('/shop', [
-                CooperativeController::class,
-                'myShop'
-            ]);
-
-            Route::put('/shop', [
-                CooperativeController::class,
-                'updateShop'
-            ]);
-
-            // My products
-            Route::get('/products', [
-                ProductController::class,
-                'myProducts'
-            ]);
-
-            Route::post('/products', [
-                ProductController::class,
-                'store'
-            ]);
-
-            Route::get('/products/{product}', [
-                ProductController::class,
-                'edit'
-            ]);
-
-            Route::put('/products/{product}', [
-                ProductController::class,
-                'update'
-            ]);
-
-            Route::delete('/products/{product}', [
-                ProductController::class,
-                'destroy'
-            ]);
-
-            // Orders received
-            Route::get('/orders', [
-                OrderController::class,
-                'cooperativeOrders'
-            ]);
-
-            Route::get('/orders/{order}', [
-                OrderController::class,
-                'cooperativeOrder'
-            ]);
-
-            Route::put('/orders/{order}/status', [
-                OrderController::class,
-                'updateStatus'
-            ]);
-        });
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Admin
-    |--------------------------------------------------------------------------
-    */
-
-    Route::middleware('role:admin')
-        ->prefix('admin')
-        ->group(function () {
-
-            // Dashboard
-            Route::get('/dashboard', [
-                AdminController::class,
-                'dashboard'
-            ]);
-
-            // Cooperatives
-            Route::get('/cooperatives', [
-                CooperativeController::class,
-                'adminIndex'
-            ]);
-
-            Route::get('/cooperatives/{cooperative}', [
-                CooperativeController::class,
-                'adminShow'
-            ]);
-
-            Route::put('/cooperatives/{cooperative}/status', [
-                CooperativeController::class,
-                'updateStatus'
-            ]);
-
-            // Reviews
-            Route::get('/reviews', [
-                ReviewController::class,
-                'adminIndex'
-            ]);
-
-            Route::put('/reviews/{review}/status', [
-                ReviewController::class,
-                'updateStatus'
-            ]);
-
-            // Categories
-            Route::get('/categories', [
-                CategoryController::class,
-                'adminIndex'
-            ]);
-
-            Route::post('/categories', [
-                CategoryController::class,
-                'store'
-            ]);
-
-            Route::put('/categories/{category}', [
-                CategoryController::class,
-                'update'
-            ]);
-
-            Route::delete('/categories/{category}', [
-                CategoryController::class,
-                'destroy'
-            ]);
-        });
+    // ── Admin ─────────────────────────────────────────────────────────────────
+    Route::prefix('admin')->middleware('role:admin')->group(function () {
+        Route::get('/users',                           [AdminController::class, 'users']);
+        Route::get('/cooperatives',                    [AdminController::class, 'cooperatives']);
+        Route::patch('/cooperatives/{cooperative}/status', [AdminController::class, 'setCoopStatus']);
+        Route::patch('/commands/{command}/status',     [CommandController::class, 'updateStatus']);
+        Route::patch('/avis/{avis}/moderate',          [AvisController::class, 'moderate']);
+        Route::post('/categories',                     [CategoryController::class, 'store']);
+        Route::delete('/categories/{category}',        [CategoryController::class, 'destroy']);
+    });
 });
