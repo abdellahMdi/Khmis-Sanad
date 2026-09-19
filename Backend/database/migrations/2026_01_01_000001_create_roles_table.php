@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('paniers', function (Blueprint $table) {
-            $table->increments('id');
-            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
+        Schema::create('roles', function (Blueprint $table) {
+            $table->integer('id', true);
+            $table->string('label', 50);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('paniers');
+        Schema::dropIfExists('roles');
     }
 };

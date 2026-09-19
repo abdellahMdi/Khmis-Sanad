@@ -9,12 +9,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('commands', function (Blueprint $table) {
-            $table->increments('id');
+            $table->integer('id', true);
             $table->decimal('total', 10, 2);
-            $table->string('statut', 50)->nullable();
+            $table->string('statut', 50)->default('pending');
             $table->string('adresse_livraison', 255)->nullable();
-            $table->dateTime('created_at')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->dateTime('created_at')->useCurrent();
+            $table->integer('user_id')->nullable();
+
+            $table->foreign('user_id', 'fk_commands_user')
+                ->references('id')->on('users')
+                ->onUpdate('cascade')->onDelete('set null');
+            $table->index('user_id', 'idx_commands_user_id');
         });
     }
 
