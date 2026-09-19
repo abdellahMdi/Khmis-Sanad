@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import HomePage from './pages/HomePage.jsx'
-import Toast from './components/Toast.jsx'
+import Toast from './components/Toast.jsx' // Added missing import
 
 export default function App() {
   const [cartCount, setCartCount] = useState(2)
@@ -8,7 +8,7 @@ export default function App() {
 
   const addToCart = (name) => {
     setCartCount(c => c + 1)
-    setToast('\u2713 "' + name + '" ajout\u00e9 au panier!')
+    setToast('✓ "' + name + '" ajouté au panier!')
     setTimeout(() => setToast(null), 3000)
   }
 
