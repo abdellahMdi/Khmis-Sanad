@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProductImg extends Model
 {
+    use HasFactory;
+
     protected $table = 'product_img';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'url',
@@ -15,12 +20,8 @@ class ProductImg extends Model
         'product_id',
     ];
 
-    protected $casts = [
-        'order' => 'integer',
-    ];
-
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
 }

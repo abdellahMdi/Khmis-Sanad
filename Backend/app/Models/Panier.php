@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Panier extends Model
 {
+    use HasFactory;
+
+    public $timestamps = false;
+
     protected $fillable = [
         'user_id',
     ];
@@ -19,6 +24,6 @@ class Panier extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(PanierItem::class);
+        return $this->hasMany(PanierItem::class, 'panier_id');
     }
 }

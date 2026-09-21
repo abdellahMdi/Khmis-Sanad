@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CommandLigne extends Model
 {
+    use HasFactory;
+
+    public $timestamps = false;
+
     protected $fillable = [
         'quantity',
         'prix_unitaire',
@@ -14,18 +19,21 @@ class CommandLigne extends Model
         'product_id',
     ];
 
-    protected $casts = [
-        'quantity' => 'integer',
-        'prix_unitaire' => 'decimal:2',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'integer',
+            'prix_unitaire' => 'decimal:2',
+        ];
+    }
 
     public function command(): BelongsTo
     {
-        return $this->belongsTo(Command::class);
+        return $this->belongsTo(Command::class, 'command_id');
     }
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
 }
