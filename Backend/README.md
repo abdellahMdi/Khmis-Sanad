@@ -1,58 +1,96 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Backend — Khmis Sanad (API Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST découplée de Khmis Sanad, marketplace multi-vendeurs pour les coopératives et artisans marocains. Frontend React séparé : ce dossier ne contient que l’API.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Laravel 12 / PHP 8.3–8.5 (cahier : Laravel 13 ; le lock actuel reste en 12, compatible PHP 8.5)
+- Eloquent + MySQL
+- Sanctum (auth SPA cookie, pas de Bearer)
+- Middlewares `role:admin|artisan|client` (équivalent Laratrust, voir écarts)
+- Notifications email en queue (`NewOrderNotification`)
+- Tests PHPUnit + Pint
+- Docker Compose (API + MySQL + frontend) / GitHub Actions
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Décisions métier
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Commande multi-boutiques** : `POST /api/orders` **scinde** le panier en **une commande (`commands`) par coopérative**. Le schéma n’a pas de `shop_id` sur `commands` ; les lignes (`command_lignes` → `products.coop_id`) portent la boutique. Une commande par boutique permet l’email artisan US 3.3 et un `whatsapp_number` unique.
+- **WhatsApp** : pas de colonne dédiée. `whatsapp_number` est le `users.telephone` **du propriétaire de la boutique** (artisan), normalisé (ex. `06…` → `2126…`). Le frontend construit `https://wa.me/{whatsapp_number}?text=...`.
+- **Invités** : hors scope v1. `paniers.user_id` est NOT NULL UNIQUE → panier et commande uniquement `role:client`.
+- **Paiement** : aucune passerelle. La commande est une **réservation / mise en relation** ; le paiement se fait hors plateforme via WhatsApp.
+- **Boutique** = table `cooperatives`. `terroir` API ↔ colonne `hq_location`.
 
-## Learning Laravel
+## Écarts schéma ↔ US
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Besoin | Décision |
+|---|---|
+| `GET /api/products/{slug}` | Colonne additive `products.slug` (UNIQUE). |
+| Notifications Laravel | Colonne additive `notifications.data` (JSON). IDs entiers conservés (pas d’UUID Laravel). |
+| Sanctum SPA + queue + cache | Tables infra **hors domaine** : `sessions`, `jobs`, `job_batches`, `failed_jobs`, `cache`, `cache_locks`. |
+| Laratrust | **Non installé** : sa table `roles` (name/display_name + pivots permissions) **entre en conflit** avec `roles(id, label)` + `users.role_id`. Middleware `role:…` identique au contrat d’API. |
+| Sous-catégories | Absentes du schéma. `GET /api/categories` renvoie `children: []`. |
+| `updated_at` Laravel | Non ajouté. Timestamps uniquement sur `users.created_at`, `commands.created_at`, `notifications.created_at`. |
+| Mot de passe | Colonne `mot_de_passe` (pas `password`). Le JSON d’auth utilise toujours `password`. |
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Schéma / migrations
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+Le schéma vit uniquement dans `database/migrations/` : **un fichier = une table**, préfixe `2026_01_01_0000NN`, numérotés dans l’ordre des clés étrangères (`roles` → `users` → … → `avis` → `notifications`, puis les tables d’infra `sessions`, `cache`, `jobs`). Aucun dump `.sql` n’est maintenu. Pour repartir de zéro : `php artisan migrate:fresh --seed`.
 
-## Agentic Development
+## Auth SPA
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+1. `GET /sanctum/csrf-cookie` (credentials)
+2. `POST /api/login` ou `POST /api/register`
+3. Requêtes suivantes avec cookies + header `X-XSRF-TOKEN`
+
+`GET /api/user` → utilisateur + `role` (`admin` \| `artisan` \| `client`) + boutique si artisan.
+
+Inscription artisan : `role=artisan` + `shop_name` → coopérative `status=pending`.
+
+## Install local (sans Docker)
+
+PHP 8.5 (Herd) : `composer install --ignore-platform-reqs` car le lock Laravel 12 pinne encore des packages `php <= 8.4`. Le CI utilise PHP 8.4.
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+cd backend
+cp .env.example .env
+composer install --ignore-platform-reqs
+php artisan key:generate
+# Ajuster DB_* dans .env
+php artisan migrate --seed
+php artisan serve
+php artisan queue:work
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Comptes démo (mot de passe `Password123`) :
 
-## Contributing
+| Email | Rôle |
+|---|---|
+| admin@terroir.ma | admin |
+| targanine@terroir.ma | artisan (boutique approuvée) |
+| taliouine@terroir.ma | artisan (boutique approuvée) |
+| pending@terroir.ma | artisan (boutique pending) |
+| client@terroir.ma | client |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Install Docker
 
-## Code of Conduct
+À la racine du repo :
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+docker compose up --build
+docker compose exec app php artisan db:seed
+```
 
-## Security Vulnerabilities
+API : `http://localhost:8000`. Frontend : `http://localhost:5173`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Tests / lint
 
-## License
+```bash
+cd backend
+vendor/bin/pint
+php artisan test
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Documentation API
+
+- OpenAPI : `backend/docs/openapi.yaml`
+- Postman : `backend/docs/postman_collection.json`
