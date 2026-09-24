@@ -308,29 +308,6 @@ Every route below is prefixed with `/api`. `GET /sanctum/csrf-cookie` (outside `
 | DELETE | `/shop/products/{product}` | denied | Delete a product. |
 | GET | `/shop/orders` | denied | Orders containing this shop's products. |
 
-### Admin (`role:admin`, prefix `/admin`)
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/admin/shops` | All cooperatives with their owner. |
-| PATCH | `/admin/shops/{shop}/approve` | Approve. 422 if no proof document was uploaded. |
-| PATCH | `/admin/shops/{shop}/block` | Block a shop. |
-| GET | `/admin/reviews/pending` | Reviews awaiting moderation. |
-| PATCH | `/admin/reviews/{review}/approve` | Publish a review. |
-| DELETE | `/admin/reviews/{review}` | Delete a review. |
-| GET | `/admin/users` | All users with role and shop status. |
-
-Machine-readable specs live in `backend/docs/openapi.yaml` and `backend/docs/postman_collection.json`.
-
-### Authorization layers
-
-Three mechanisms stack up:
-
-- `RoleMiddleware` (alias `role:`) — 403 unless the user's role label matches; supports `role:admin|artisan`.
-- `EnsureArtisanNotBlocked` (alias `artisan.not_blocked`) — 403 when a blocked artisan attempts a write.
-- Policies (`ProductPolicy`, `CooperativePolicy`, `AvisPolicy`, registered in `AppServiceProvider`) — ownership checks so an artisan can never touch another shop's data. Admins bypass `ProductPolicy` through `before()`.
-
----
 
 ## 9. Frontend
 
@@ -355,16 +332,6 @@ A single-page app. Admin and artisan areas are lazy-loaded so a client never dow
 
 `ProtectedRoute` redirects anonymous visitors to `/login` (remembering where they came from) and wrong-role users to `/403`. `GuestRoute` pushes signed-in users away from the auth pages.
 
-### Data layer
-
-- `src/api/client.js` — a single Axios instance with `withCredentials`, automatic `GET /sanctum/csrf-cookie` before any write, a 30-second timeout for `FormData` uploads, and a retry on HTTP 419 (expired CSRF token).
-- `src/api/api.js` — every endpoint as an RTK Query hook, with cache tags (`Product`, `Cart`, `Orders`, `AdminShops`…) so that, for example, approving a shop automatically refreshes the public catalog.
-- `src/store/authSlice.js` — mirrors the current user and role from the `getUser` / `login` / `register` / `logout` results.
-
-The UI is mobile-first: a hamburger menu under `md`, stacked grids, full-width call-to-action buttons, 44 px minimum tap targets, and horizontally scrollable dashboard navigation on small screens.
-
----
-
 ## 10. Design system
 
 Brand tokens are defined in `frontend/tailwind.config.js` and derived from the cooperative's logo.
@@ -384,28 +351,6 @@ Reusable utility classes in `src/index.css`: `.nav-link`, `.input-field`, `.card
 Logos live in `frontend/public/myassets/`: `headerimg.png` in the header, `biglogo.png` on home and auth pages, `botomimag.png` inverted on the black footer, `vite.svg` as favicon.
 
 ---
-
-## 11. Tests, linting and CI
-
-### Backend
-
-```bash
-cd backend
-php artisan test        # 21 feature tests
-vendor/bin/pint         # code style (--test to check only)
-```
-
-Tests run on in-memory SQLite (configured in `phpunit.xml`), so no MySQL is needed. `tests/TestCase.php` disables CSRF and sets the SPA origin headers.
-
-| File | Covers |
-|---|---|
-| `AuthTest` | Client and artisan registration, cookie login, logout |
-| `CatalogTest` | Only approved shops are public; viewer meta for guests |
-| `OrderTest` | Checkout splits by shop, decrements stock, notifies artisans, normalizes the WhatsApp number |
-| `ReviewTest` | Review requires a purchase, is pending by default, cannot be duplicated |
-| `RolePermissionTest` | Role and ownership boundaries, shop approval requires proof |
-| `ApiRouteSmokeTest` | Every route responds for the right role |
-
 ### Frontend
 
 ```bash
