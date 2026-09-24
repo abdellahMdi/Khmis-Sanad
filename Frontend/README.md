@@ -1,16 +1,42 @@
-# React + Vite
+# Frontend — Khmis Sanad
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+SPA React (Vite) de Khmis Sanad. Backend Laravel séparé.
 
-Currently, two official plugins are available:
+## Décisions
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Images produit** : l’API n’a pas d’upload multipart. Le formulaire artisan saisit des **URLs** (`product_img.url`).
+- **Recherche catalogue** : `LIKE` backend, debounce 350 ms sur `?q=`.
+- **Tunnel de commande** : **une page** (récap groupé par boutique + adresse). `POST /api/orders` peut renvoyer **plusieurs commandes** (une par coopérative).
+- **Fiche produit** : route `/produits/:id` où `:id` est le **slug** API (`GET /api/products/{slug}`).
+- **Admin coopératives** : liste paginée via `GET /api/admin/shops`.
 
-## React Compiler
+## Auth Sanctum
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Axios `withCredentials: true`. `GET /sanctum/csrf-cookie` avant POST. Aucun Bearer en localStorage. Au boot : `GET /api/user`.
 
-## Expanding the Oxlint configuration
+`VITE_API_URL` = origine du backend (sans `/api`), ex. `http://localhost:8000`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Install sans Docker
+
+```bash
+cd frontend
+copy .env.example .env
+npm install
+npm run dev
+```
+
+Backend : `http://localhost:8000` (CORS + `SANCTUM_STATEFUL_DOMAINS` déjà prévus pour `:5173`).
+
+```bash
+npm test
+```
+
+## Docker
+
+À la racine du repo :
+
+```bash
+docker compose up --build
+```
+
+Frontend : `http://localhost:5173` (`VITE_API_URL=http://localhost:8000`).

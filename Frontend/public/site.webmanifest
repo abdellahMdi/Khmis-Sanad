@@ -1,0 +1,15 @@
+{
+  "name": "Coopérative Sanad",
+  "short_name": "Sanad",
+  "icons": [
+    {
+      "src": "/myassets/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#D0121A",
+  "background_color": "#F5F2EB",
+  "display": "standalone"
+}
