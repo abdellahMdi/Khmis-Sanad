@@ -9,6 +9,8 @@ export default defineConfig({
         strictPort: true,
         watch: {
             ignored: ['**/public/myassets/**'],
+            // Docker on Windows does not notify Vite when a file is saved.
+            usePolling: process.env.CHOKIDAR_USEPOLLING === 'true',
         },
     },
 });

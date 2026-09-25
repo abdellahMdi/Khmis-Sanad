@@ -73,14 +73,9 @@ Comptes démo (mot de passe `Password123`) :
 
 ## Install Docker
 
-À la racine du repo :
+The Compose file is at the repository root. Follow **Getting started with Docker** in the root `README.md`.
 
-```bash
-docker compose up --build
-docker compose exec app php artisan db:seed
-```
-
-API : `http://localhost:8000`. Frontend : `http://localhost:5173`.
+API: `http://localhost:8000`. Frontend: `http://localhost:5173`. Database from the host: `127.0.0.1:3307`, database `marketplace`, user `marketplace`, password `secret`.
 
 ## Tests / lint
 

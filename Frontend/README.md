@@ -33,10 +33,6 @@ npm test
 
 ## Docker
 
-À la racine du repo :
+The image is `frontend/Dockerfile` (Node 22). Compose builds it as the `web` service. Follow **Getting started with Docker** in the root `README.md`.
 
-```bash
-docker compose up --build
-```
-
-Frontend : `http://localhost:5173` (`VITE_API_URL=http://localhost:8000`).
+Site: `http://localhost:5173`. The container sets `VITE_API_URL=http://localhost:8000`.

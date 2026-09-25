@@ -90,40 +90,86 @@ Note that the password column is `mot_de_passe`, not `password`. `User::getAuthP
 
 ## 3. Getting started with Docker
 
-Only [Docker Desktop](https://www.docker.com/products/docker-desktop/) is required — no local PHP, Composer, Node or MySQL.
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and leave it running. You do not need PHP, Composer, Node, or MySQL on your computer.
+
+Three containers start together:
+
+| Service | What it is | Address on your PC |
+|---|---|---|
+| `db` | MySQL 8 | `127.0.0.1:3307` (user `marketplace`, password `secret`, database `marketplace`) |
+| `app` | Laravel API | http://localhost:8000 |
+| `web` | React site, built from `frontend/Dockerfile` (Node 22) | http://localhost:5173 |
+
+Port **3307** is used on purpose. XAMPP already uses 3306, and the API inside Docker still talks to MySQL on 3306.
+
+### First time
+
+From the project folder:
 
 ```bash
-git clone <repository-url> khmis-sanad
-cd khmis-sanad
-docker compose up --build
+copy Backend\.env.example Backend\.env
+copy frontend\.env.example frontend\.env
 ```
 
-The first build takes a few minutes: it installs Composer and npm dependencies. When the logs settle, seed the demo data in a second terminal:
+On macOS or Linux, use `cp` instead of `copy`.
+
+Build the images and start only the database:
+
+```bash
+docker compose build
+docker compose up -d db
+```
+
+Install the API and create its tables. `--no-deps` means “do not also start the website”.
+
+```bash
+docker compose run --rm --no-deps app composer install
+docker compose run --rm --no-deps app php artisan key:generate
+docker compose run --rm --no-deps app php artisan migrate
+docker compose run --rm --no-deps app php artisan storage:link
+```
+
+Skip `key:generate` if `Backend/.env` already has an `APP_KEY`.
+
+The site cannot register anyone until the three roles exist. Run this once:
+
+```bash
+docker compose exec db mysql -umarketplace -psecret marketplace -e "INSERT INTO roles (label) SELECT 'admin' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE label='admin'); INSERT INTO roles (label) SELECT 'artisan' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE label='artisan'); INSERT INTO roles (label) SELECT 'client' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE label='client');"
+```
+
+Install the frontend packages:
+
+```bash
+docker compose run --rm --no-deps web npm install
+```
+
+### Every time you want to work
+
+```bash
+docker compose up
+```
+
+Wait until the logs show the API and Vite are ready, then open **http://localhost:5173**.
+
+Stop with `Ctrl+C`, or:
+
+```bash
+docker compose down
+```
+
+`docker compose down -v` also deletes the database. The next start needs `php artisan migrate` again, and the roles command again.
+
+### What the containers already set for you
+
+`docker-compose.yml` points the API at the `db` container (`DB_HOST=db`). Emails are written to `Backend/storage/logs/laravel.log`. Jobs run immediately (`QUEUE_CONNECTION=sync`), so you do not start a queue worker.
+
+Your `Backend` and `frontend` folders are mounted into the containers. Saving a file updates the running app. PHP packages live in a Docker volume named `app_vendor`, and npm packages live in `web_node_modules`. After you add a package, run `composer install` or `npm install` with the same `docker compose run` commands as above.
+
+`RoleSeeder` and `DemoSeeder` are not in the repository, so the catalog starts empty. When those files exist:
 
 ```bash
 docker compose exec app php artisan db:seed
 ```
-
-Then open **http://localhost:5173**.
-
-`docker-compose.yml` defines three services:
-
-| Service | Image / build | Port | Role |
-|---|---|---|---|
-| `db` | `mysql:8.0` | 3306 | Database `marketplace`, user `marketplace` / `secret` |
-| `app` | `backend/Dockerfile` (PHP 8.4 CLI + Composer) | 8000 | Runs `composer install`, `artisan migrate`, then `artisan serve` |
-| `web` | `node:22-alpine` | 5173 | Runs `npm install` then `npm run dev` |
-
-Both app folders are bind-mounted, so edits on the host are picked up live. Useful commands:
-
-```bash
-docker compose logs -f app         # tail API logs
-docker compose exec app bash       # shell inside the API container
-docker compose exec app php artisan migrate:fresh --seed
-docker compose down -v             # stop and wipe the database volume
-```
-
-Mail is set to the `log` driver in Compose, so order emails land in `backend/storage/logs/laravel.log` instead of a real inbox. The queue is `sync`, so notifications are sent in-process and no worker is needed.
 
 ---
 
@@ -394,6 +440,7 @@ khmis-sanad/
 │   ├── routes/api.php
 │   └── tests/Feature/
 └── frontend/
+    ├── Dockerfile               # Node 22, Vite dev server
     ├── public/myassets/         # Logos and favicon
     └── src/
         ├── api/                 # Axios client + RTK Query endpoints
