@@ -98,7 +98,7 @@ Three containers start together:
 |---|---|---|
 | `db` | MySQL 8 | `127.0.0.1:3307` (user `marketplace`, password `secret`, database `marketplace`) |
 | `app` | Laravel API | http://localhost:8000 |
-| `web` | React site, built from `frontend/Dockerfile` (Node 22) | http://localhost:5173 |
+| `web` | React site, built from `Frontend/Dockerfile` (Node 22). Build context is `Frontend/`, where `package.json` lives. | http://localhost:5173 |
 
 Port **3307** is used on purpose. XAMPP already uses 3306, and the API inside Docker still talks to MySQL on 3306.
 
@@ -108,7 +108,7 @@ From the project folder:
 
 ```bash
 copy Backend\.env.example Backend\.env
-copy frontend\.env.example frontend\.env
+copy Frontend\.env.example Frontend\.env
 ```
 
 On macOS or Linux, use `cp` instead of `copy`.
@@ -163,7 +163,9 @@ docker compose down
 
 `docker-compose.yml` points the API at the `db` container (`DB_HOST=db`). Emails are written to `Backend/storage/logs/laravel.log`. Jobs run immediately (`QUEUE_CONNECTION=sync`), so you do not start a queue worker.
 
-Your `Backend` and `frontend` folders are mounted into the containers. Saving a file updates the running app. PHP packages live in a Docker volume named `app_vendor`, and npm packages live in `web_node_modules`. After you add a package, run `composer install` or `npm install` with the same `docker compose run` commands as above.
+Your `Backend` and `Frontend` folders are mounted into the containers. Saving a file updates the running app. PHP packages live in a Docker volume named `app_vendor`, and npm packages live in `web_node_modules`. After you add a package, run `composer install` or `npm install` with the same `docker compose run` commands as above.
+
+There is no `package.json` at the repository root. The React app is `Frontend/package.json` (`Backend/package.json` is only Laravel Vite, not the site). On the host, set **Root Directory** to `Frontend`. If that field stays empty, the host runs `npm install` in `/app` and fails with `ENOENT ... /app/package.json`.
 
 `RoleSeeder` and `DemoSeeder` are not in the repository, so the catalog starts empty. When those files exist:
 
@@ -210,7 +212,7 @@ php artisan queue:work
 ### Frontend
 
 ```bash
-cd frontend
+cd Frontend
 cp .env.example .env          # Windows: copy .env.example .env
 npm install
 npm run dev                   # http://localhost:5173
@@ -439,8 +441,8 @@ khmis-sanad/
 │   ├── docs/                    # openapi.yaml, postman_collection.json
 │   ├── routes/api.php
 │   └── tests/Feature/
-└── frontend/
-    ├── Dockerfile               # Node 22, Vite dev server
+└── Frontend/
+    ├── Dockerfile               # Node 22: copies package.json, then npm ci
     ├── public/myassets/         # Logos and favicon
     └── src/
         ├── api/                 # Axios client + RTK Query endpoints

@@ -39,7 +39,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Your Backend folder is visible inside the container, so code edits apply live.
+      # Folder name is Backend (capital B), as Git tracks it. A lowercase
+      # path on Linux creates an empty folder and the API cannot start.
       - ./Backend:/var/www/html
       # PHP dependencies stay in Docker, not mixed with a Windows vendor folder.
       - app_vendor:/var/www/html/vendor
@@ -65,13 +66,15 @@ services:
 
   web:
     build:
-      context: ./frontend
+      # Folder name is Frontend (capital F). This is the directory that
+      # contains package.json. Context must not be the repo root.
+      context: ./Frontend
       dockerfile: Dockerfile
+      target: dev
     ports:
       - "5173:5173"
     volumes:
-      # Your frontend folder is visible inside the container, so code edits apply live.
-      - ./frontend:/app
+      - ./Frontend:/app
       # npm packages stay in Docker, not mixed with a Windows node_modules folder.
       - web_node_modules:/app/node_modules
     environment:

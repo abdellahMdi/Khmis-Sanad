@@ -19,7 +19,7 @@ Axios `withCredentials: true`. `GET /sanctum/csrf-cookie` avant POST. Aucun Bear
 ## Install sans Docker
 
 ```bash
-cd frontend
+cd Frontend
 copy .env.example .env
 npm install
 npm run dev
@@ -33,6 +33,8 @@ npm test
 
 ## Docker
 
-The image is `frontend/Dockerfile` (Node 22). Compose builds it as the `web` service. Follow **Getting started with Docker** in the root `README.md`.
+The image is `Frontend/Dockerfile`. Compose builds it as `web` with context `./Frontend` (this folder, not the repo root). Follow **Getting started with Docker** in the root `README.md`.
+
+On the host, set **Root Directory** to `Frontend`. The Dockerfile copies `package.json` then runs `npm ci`. Local Compose uses the `dev` stage (Vite on port 5173). A production build uses the last stage (nginx on port 80).
 
 Site: `http://localhost:5173`. The container sets `VITE_API_URL=http://localhost:8000`.
